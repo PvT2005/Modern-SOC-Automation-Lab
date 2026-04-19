@@ -1,37 +1,39 @@
 # 🎯 Windows 10 Telemetry Setup (Sysmon & Wazuh Agent)
 
-Mục tiêu của bước này là biến máy tính Windows thông thường thành một "cảm biến" thu thập dữ liệu hành vi chuyên sâu và liên tục đẩy về SIEM trung tâm.
+Mục tiêu của bước này là biến máy tính Windows thông thường thành một "cảm biến" thu thập dữ liệu hành vi chuyên sâu (Telemetry) và liên tục đẩy về SIEM trung tâm tại Ubuntu Server (192.168.56.10).
 
 ## 1. Cài đặt Sysmon với bộ cấu hình SwiftOnSecurity
-Windows Event Log mặc định không đủ để bắt các kỹ thuật tấn công hiện đại. Sysmon  sẽ khắc phục điều này.
+Windows Event Log mặc định rất hạn chế. Sysmon sẽ giúp bắt được các hành vi như: Process Creation, Network Connection, và Driver Load.
 
-- Tải bộ công cụ **Sysinternals Suite** từ Microsoft.
-- Tải file cấu hình tiêu chuẩn công nghiệp từ GitHub: [SwiftOnSecurity Sysmon Config](https://github.com/SwiftOnSecurity/sysmon-config).
-- Mở PowerShell với quyền Administrator và chạy lệnh cài đặt:
-```powershell
-sysmon64.exe -accepteula -i sysmonconfig-export.xml
-```
-## 2. Cài đặt Wazuh Agent và trỏ IP
-- Tải file .msi của Wazuh Agent tương ứng với phiên bản Manager từ trang chủ Wazuh.
+- Tải công cụ: - Tải Sysmon từ bộ Sysinternals Suite.
 
-- Cài đặt qua giao diện UI hoặc chạy lệnh PowerShell:
+  - Tải file cấu hình chuẩn [tại đây](../Phase-2-Detection/sysmonconfig.xml)
+
+
+Cài đặt: Mở PowerShell quyền Admin, di chuyển vào thư mục chứa Sysmon và chạy lệnh:
 
 ```bash
-msiexec.exe /i wazuh-agent.msi /q WAZUH_MANAGER="<IP_UBUNTU_SERVER>" WAZUH_REGISTRATION_SERVER="<IP_UBUNTU_SERVER>"
+.\Sysmon64.exe -i sysmonconfig.xml 
 ```
-- Mở file cấu hình Agent tại C:\Program Files (x86)\ossec-agent\ossec.conf. Thêm đoạn mã sau để Agent biết cách đọc log của Sysmon:
+Sau khi chạy, Sysmon sẽ bắt đầu ghi log vào Event Viewer.
 
-```bash
-<localfile>
-  <location>Microsoft-Windows-Sysmon/Operational</location>
-  <log_format>eventchannel</log_format>
-</localfile>
-```
-- Restart lại service Wazuh từ mục Services.msc của Windows.
+## 2. Cài đặt Wazuh Agent và Kết nối 
+Sau khi đã có log Sysmon, chúng ta cần Wazuh Agent để chuyển log về Ubuntu Server.
 
-## 3. Kiểm tra Telemetry
-- Trên Endpoint: Mở Event Viewer -> Applications and Services Logs -> Microsoft -> Windows -> Sysmon -> Operational. Bạn sẽ thấy log chi tiết về Process (Event ID 1) hoặc Network (Event ID 3) liên tục được sinh ra.
+- Cấu hình đẩy log Sysmon :
 
-- Trên Server: Đăng nhập Wazuh Dashboard, vào mục Agents để xác nhận kết nối.
+  - Chỉnh sửa file C:\Program Files (x86)\ossec-agent\ossec.conf.Bạn có thể xem chi tiết [tại đây](../Phase-2-Detection/ossec.conf) 
+
+- Lưu file và thực hiện Restart service Wazuh để áp dụng cấu hình mới
+
+## 3. Kiểm tra và Xác nhận 
+Đây là bước cuối cùng để đảm bảo đường ống dữ liệu không bị tắc.
+
+- Trên Windows 10: Kiểm tra xem các sự kiện có đang sinh ra liên tục không.
+- Trên Wazuh Dashboard: 
+  - Vào mục Agents, xác nhận máy Windows 10 ở trạng thái Active.
+  - Vào Security Events, xác nhận log từ Windows đã đổ về SIEM.
+
+
 
 

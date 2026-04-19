@@ -12,7 +12,7 @@ sudo apt update && sudo apt upgrade -y
 curl -sO https://packages.wazuh.com/4.x/wazuh-install.sh
 sudo bash ./wazuh-install.sh -a
 ```
-⚠️ Lưu ý quan trọng: Khi kết thúc, màn hình Terminal sẽ in ra thông tin đăng nhập (Username là admin và Password được sinh ngẫu nhiên). Hãy copy và lưu trữ mật khẩu này thật cẩn thận!
+⚠️ Lưu ý quan trọng: Khi kết thúc, màn hình Terminal sẽ in ra thông tin đăng nhập (Username là admin và Password được sinh ngẫu nhiên).
  ## 3. Kiểm tra trạng thái dịch vụ
 ```bash
 sudo systemctl status wazuh-manager

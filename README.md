@@ -17,28 +17,28 @@ Target Machine (Windows 10): Sysmon & Wazuh Agent.
 **Step 1**: Telemetry Generation with Sysmon
 Tăng cường khả năng giám sát bằng Sysmon thay vì log mặc định.
 
-- Action: Cài đặt Sysmon với bộ luật từ SwiftOnSecurity.
+- [Cài đặt và cấu hình Sysmon](./docs/03-Windows-Endpoint-Setup.md).
 
-- Chi tiết: Hướng dẫn cài đặt & cấu hình Sysmon
+
 
 **Step 2**: SIEM/EDR Core (Wazuh Native)
 Thiết lập bộ não trung tâm để thu thập và phân tích cảnh báo.
 
-- Action: Triển khai Wazuh Manager, Indexer và Dashboard trực tiếp trên Ubuntu.
+- Triển khai Wazuh Manager, Indexer và Dashboard trực tiếp trên Ubuntu.
 
-- Chi tiết: Hướng dẫn cài đặt Wazuh Native
+- [Cài đặt Wazuh Native](./docs/01-Wazuh-Manager-Installation.md)
 
 **Step 3**: Case Management (TheHive Docker)
 Xây dựng nền tảng quản lý sự cố và Ticketing.
 
-- Action: Triển khai TheHive qua Docker Compose để sẵn sàng tích hợp SOAR.
+- Triển khai TheHive qua Docker Compose để sẵn sàng tích hợp SOAR.
 
-- Chi tiết: Hướng dẫn setup TheHive & Docker
+- [Cài đặt TheHive & Docker](./docs/02-TheHive-Docker-Deployment.md)
 
 **Step 4**: Log Ingestion Configuration
-Cấu hình Agent để đọc dữ liệu từ Application, Security và Sysmon.
+Cấu hình Agent để đọc dữ liệu từ Application, System, Security và Sysmon.
 
-- Config File: Xem file cấu hình ossec.conf mẫu
+- Config File: Xem file cấu hình [ossec.conf](./Phase-2-Detection/ossec.conf) 
 
 **Step 5**: Automation Readiness
 Kích hoạt archives.json để lưu trữ dữ liệu thô phục vụ cho SOAR Playbooks.
