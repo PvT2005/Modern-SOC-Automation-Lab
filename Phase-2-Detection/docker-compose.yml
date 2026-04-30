@@ -1,0 +1,27 @@
+version: "3"
+services:
+  elasticsearch:
+    image: elasticsearch:7.17.9
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    volumes:
+      - ./elasticsearch_data:/usr/share/elasticsearch/data
+      - ./elasticsearch_config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - ./elasticsearch_config/jvm.options:/usr/share/elasticsearch/config/jvm.options.d/jvm.options
+  
+  cassandra:
+    image: cassandra:4
+    volumes:
+      - ./cassandra_data:/var/lib/cassandra
+      - ./cassandra_config/cassandra.yaml:/etc/cassandra/cassandra.yaml
+
+  thehive:
+    image: thehiveproject/thehive4:latest
+    depends_on:
+      - elasticsearch
+      - cassandra
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./thehive_config/application.conf:/etc/thehive/application.conf
