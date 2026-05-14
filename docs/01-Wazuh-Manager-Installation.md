@@ -18,11 +18,11 @@ sudo bash ./wazuh-install.sh -a
 sudo systemctl status wazuh-manager
 ```
 ## 4. Truy cập giao diện quản trị
-- Mở trình duyệt trên máy thật hoặc máy ảo có giao diện đồ họa.
-
 - Truy cập vào địa chỉ IP của Ubuntu Server: https://192.168.56.10
-
 - Đăng nhập với tài khoản admin và mật khẩu đã tạo.
+![wazuh-login](../screenshots/Wazuh-login.jpg)
+- Giao diện dashboard
+![wazuh-dashboard](../screenshots/Wazuh-Dashboard.jpg)
 
 
 ## 5. Cấu hình Wazuh phục vụ tự động hóa

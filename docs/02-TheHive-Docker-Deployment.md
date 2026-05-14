@@ -1,4 +1,4 @@
-# 🐝 Deploying TheHive using Docker Compose
+# Deploying TheHive using Docker Compose
 
 TheHive là nền tảng Case Management dành riêng cho các đội phản ứng sự cố (CERT/SOC). Để quản lý dễ dàng và tách biệt môi trường, hệ thống này được triển khai dưới dạng Docker Containers.
 
@@ -21,7 +21,8 @@ sudo docker ps
 ```
 ## 4. Truy cập hệ thống
 Mở trình duyệt và truy cập: http://192.168.56.10:9000
-
+![thehive-login](../screenshots/TheHive-login.jpg)
+![thehive-dashboard](../screenshots/TheHive-Dashboard.jpg)
 
 ## 5. Cấu hình hệ thống TheHive, Cassandra và Elasticsearch
 
@@ -40,6 +41,7 @@ nano ./cassandra_config/cassandra.yaml
 Để TheHive có thể Index một cách ổn định, ta tạo cấu hình cho [elasticsearch.yml](../Phase-2-Detection/elasticsearch.yml) và thiết lập giới hạn RAM để tránh lỗi Crash hệ thống:
 ```bash
 mkdir -p ./elasticsearch_config
+mkdir -p ./elasticsearch_data ./cassandra_data
 nano ./elasticsearch_config/elasticsearch.yml
 ```
 
@@ -63,7 +65,7 @@ nano ./thehive_config/application.conf
 ```
 
 
-### Bước 5.4: Cập nhật lại `docker-compose.yml`
+### Cập nhật lại `docker-compose.yml`
 Khi các file cấu hình đã được tạo, bạn sửa lại file [docker-compose.yml](../Phase-2-Detection/docker-compose.yml) 
 
 Cuối cùng, khởi động lại toàn bộ stack để nạp cấu hình mới:

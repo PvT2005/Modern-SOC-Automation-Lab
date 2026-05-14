@@ -6,14 +6,14 @@ Dự án này mô phỏng một hệ thống SOC, tích hợp khả năng giám 
 
 Mục tiêu: Thiết lập luồng thu thập dữ liệu (Telemetry) chuyên sâu từ máy trạm Windows, tập trung quản lý qua SIEM/EDR, và chuẩn bị nền tảng hệ thống Ticketing để phục vụ cho công tác tự động hóa (SOAR) ở giai đoạn sau.
 
-### 🏗️ Architecture (Kiến trúc)
+### 🏗️ Architecture 
 Dự án vận hành trên mô hình 2 thành phần chính:
 
 SOC Brain (Ubuntu): Wazuh Manager & TheHive.
 
 Target Machine (Windows 10): Sysmon & Wazuh Agent.
 
-🚀 Implementation Steps (Các bước triển khai)
+🚀 Implementation Steps 
 **Step 1**: Telemetry Generation with Sysmon
 Tăng cường khả năng giám sát bằng Sysmon thay vì log mặc định.
 
