@@ -4,9 +4,9 @@
 ## 1. Cấu hình Máy ảo 
 - OS: Ubuntu Server 22.04 LTS .
 
-- CPU: 4 Cores.
+- CPU: 3 Cores.
 
-- RAM: 16GB
+- RAM: 10GB
 
 ## 2. Cấu hình Mạng nội bộ 
 - Network Adapter: Chế độ Host-Only 

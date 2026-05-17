@@ -7,7 +7,7 @@ Windows Event Log mặc định rất hạn chế. Sysmon sẽ giúp bắt đư�
 
 - Tải công cụ: - Tải Sysmon từ bộ Sysinternals Suite.
 
-  - Tải file cấu hình chuẩn [tại đây](../Phase-2-Detection/sysmonconfig.xml)
+  - Tải file cấu hình chuẩn [tại đây](../Phase-1-Detection/sysmonconfig.xml)
 
 
 Cài đặt: Mở PowerShell quyền Admin, di chuyển vào thư mục chứa Sysmon và chạy lệnh:
@@ -22,7 +22,7 @@ Sau khi đã có log Sysmon, chúng ta cần Wazuh Agent để chuyển log về
 
 - Cấu hình đẩy log Sysmon :
 
-  - Chỉnh sửa file C:\Program Files (x86)\ossec-agent\ossec.conf.Bạn có thể xem chi tiết [tại đây](../Phase-2-Detection/ossec.conf) 
+  - Chỉnh sửa file C:\Program Files (x86)\ossec-agent\ossec.conf.Bạn có thể xem chi tiết [tại đây](../Phase-1-Detection/wazuh_manager_ossec.conf) 
 
 - Lưu file và thực hiện Restart service Wazuh để áp dụng cấu hình mới
 

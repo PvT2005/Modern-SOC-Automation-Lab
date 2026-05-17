@@ -1,91 +1,82 @@
-# 🔍 Phase 1: Lắng nghe, Giám sát và Phát hiện Mối đe dọa
+# Phase 1: Lắng nghe, Giám sát và Phát hiện Mối đe dọa
 
 Thiết lập nền tảng giám sát toàn diện — từ thu thập Telemetry chuyên sâu trên Endpoint đến phân tích, phát hiện và quản lý cảnh báo theo khung MITRE ATT&CK.
 
-Giai đoạn này triển khai kiến trúc SIEM kết hợp với nền tảng quản lý sự cố. Tại đây, mọi sự kiện, luồng mạng và hành vi trên máy trạm sẽ được tổng hợp, phân tích dựa trên các luật cảnh báo để chỉ mặt đặt tên các rủi ro bảo mật trước khi chúng gây hại lớn hơn.
+Giai đoạn này triển khai kiến trúc SIEM với bộ Detection Rules tùy chỉnh. Tại đây, mọi sự kiện, luồng mạng và hành vi trên máy trạm sẽ được tổng hợp, phân tích dựa trên các luật cảnh báo để chỉ mặt đặt tên các rủi ro bảo mật trước khi chúng gây hại lớn hơn.
 
----
 
-## 🧩 Công cụ sử dụng
 
-- **Wazuh (SIEM/XDR)**: Đóng vai trò là trung tâm "Thu thập và Phân tích". Thu nhận log, chạy đối chiếu với thư viện luật và đánh giá các hành vi bất thường.
+## Công cụ sử dụng
 
-- **Sysmon** *(với cấu hình SwiftOnSecurity)*: Đóng vai trò giám sát sâu trên Windows. Theo dõi mọi hành động khởi tạo tiến trình, chỉnh sửa Registry hay kết nối mạng và báo cáo lại với độ chi tiết vượt trội so với Windows Event Log mặc định.
+- **Wazuh**: Đóng vai trò là trung tâm "Thu thập và Phân tích". Thu nhận log, chạy đối chiếu với thư viện luật và đánh giá các hành vi bất thường.
 
-- **Atomic Red Team**: Bộ công cụ kiểm thử mã nguồn mở ánh xạ trực tiếp với khung MITRE ATT&CK. Dùng để giả lập các kỹ thuật tấn công thực tế (ví dụ: T1003 - OS Credential Dumping, T1059 - Command & Scripting) trên máy trạm Windows mục tiêu nhằm xác thực khả năng phát hiện của hệ thống.
+- **Sysmon**: Đóng vai trò giám sát sâu trên Windows. Theo dõi mọi hành động khởi tạo tiến trình, chỉnh sửa Registry hay kết nối mạng và báo cáo lại với độ chi tiết vượt trội so với Windows Event Log mặc định.
 
-- **TheHive**: Đóng vai trò "Bàn làm việc của chuyên viên SOC". Nền tảng tiếp nhận tín hiệu từ Wazuh, giúp chuyên gia bảo mật điều phối, gắn nhãn Cases và theo dõi tiến trình xử lý sự cố.
+- **Atomic Red Team**: Bộ công cụ kiểm thử mã nguồn mở ánh xạ trực tiếp với khung MITRE ATT&CK. Dùng để giả lập các kỹ thuật tấn công thực tế trên máy trạm Windows mục tiêu nhằm xác thực khả năng phát hiện của hệ thống.
 
-- **Elasticsearch & Cassandra**: Các "Kho lưu trữ" cơ sở dữ liệu, phụ trách lưu vết và tra cứu chỉ mục phục vụ truy xuất tốc độ cao cho hệ thống TheHive.
 
----
 
-## 🔄 Luồng Phát hiện (Detection Workflow)
-
-Hệ thống vận hành theo chu trình khép kín sau:
+## Luồng hoạt động
 
 - **Telemetry Collection**: Sysmon và Windows Event Logs túc trực trên Windows Endpoint ghi nhận từng hành vi nhỏ nhất. Trình Wazuh Agent liên tục đóng gói các sự kiện này và đẩy về máy chủ Wazuh trung tâm.
 
-- **Attack Simulation**: Atomic Red Team thực thi các kịch bản tấn công được lập trình sẵn theo từng Technique ID của MITRE ATT&CK. Đây là bước tạo ra "chất liệu thô" để xây dựng và kiểm thử Detection Rules.
+- **Attack Simulation**: Atomic Red Team thực thi các kịch bản tấn công được lập trình sẵn theo từng Technique ID của MITRE ATT&CK. Đây là bước tạo ra sự kiện để xây dựng và kiểm thử Detection Rules.
 
-- **Analysis & Detection**: Wazuh Manager tiếp nhận và bắt đầu bóc tách, chuẩn hóa dữ liệu log. Hệ thống đối chiếu với bộ luật tùy chỉnh (`local_rules.xml`). Nếu một tiến trình thỏa mãn điều kiện nghi ngờ, hệ thống lập tức kích hoạt cảnh báo.
+- **Analysis & Detection**: Wazuh Manager tiếp nhận và bắt đầu bóc tách, chuẩn hóa dữ liệu log. Hệ thống đối chiếu với bộ luật tùy chỉnh. Nếu một tiến trình thỏa mãn điều kiện nghi ngờ, hệ thống lập tức kích hoạt cảnh báo.
 
-- **Alerting & Routing**: Một Webhook được Wazuh Manager tự động đẩy sang API của nền tảng TheHive, chuyển kèm chi tiết đầy đủ về loại cảnh báo, thời gian và thông tin máy chủ bị ảnh hưởng.
+- **Alerting**: Cảnh báo được ghi nhận trên Wazuh Dashboard kèm chi tiết đầy đủ về Rule ID, mức độ nghiêm trọng, thông tin máy trạm bị ảnh hưởng và ánh xạ MITRE ATT&CK. Đây là đầu ra của Phase 1, sẵn sàng chuyển tiếp sang Phase 2 qua Webhook.
 
-- **Case Management**: Tại TheHive, cảnh báo được tạo tự động để đội ngũ SOC tiếp nhận. Từ Alert này, chuyên viên có thể nhóm các cảnh báo liên quan lại và nâng cấp thành một Case phục vụ điều tra mở rộng chuyên sâu.
 
----
+## Quy trình thực hiện
 
-## ⚔️ Attack Simulation & Detection Engineering
+1. Giả lập tấn công bằng Atomic Red Team trên máy Windows mục tiêu.
 
-Đây là phần cốt lõi chứng minh giá trị của toàn bộ hệ thống — biến Lab từ môi trường "chạy được" thành môi trường "phát hiện được".
-
-### Quy trình thực hiện
-
-1. **Giả lập tấn công** bằng Atomic Red Team trên máy Windows mục tiêu.
-2. **Quan sát log thô** đổ về Wazuh Dashboard — xác định `event_id`, `process_name`, `command_line` đặc trưng.
-3. **Viết Detection Rule** tùy chỉnh vào `local_rules.xml` dựa trên dấu hiệu đã phân tích.
-4. **Kiểm thử lại** bằng cách tái giả lập tấn công và xác nhận cảnh báo được kích hoạt đúng.
-
-### Các kỹ thuật đã mô phỏng
-
-| MITRE ID | Tên kỹ thuật | Công cụ giả lập | Trạng thái |
+| MITRE ID | Tên kỹ thuật | Công cụ giả lập | Rule ID | 
 |---|---|---|---|
-| T1003 | OS Credential Dumping | Atomic Red Team | ✅ Có Detection Rule |
-| T1059.001 | PowerShell Execution | Atomic Red Team | ✅ Có Detection Rule |
-| T1547 | Registry Run Keys / Startup Folder | Atomic Red Team | ✅ Có Detection Rule |
-| T1055 | Process Injection | Atomic Red Team | 🔄 Đang phát triển |
+| T1003.001 | OS Credential Dumping: LSASS Memory | Atomic Red Team | 100001–100002 | 
+| T1059.001 | PowerShell Encoded / Bypass Execution | Atomic Red Team | 100010–100012 | 
+| T1547.001 | Registry Run Keys / Startup Folder | Atomic Red Team | 100020–100021 |
+| T1053.005 | Scheduled Task — Shell Payload | Atomic Red Team | 100030–100032 | 
+| T1136.001 | Create Local Admin Account | Atomic Red Team | 100040–100041 | 
+| T1110.001 | Brute Force Password Guessing | Script | 100050–100053 | 
+| T1021.002 | Lateral Movement via SMB / PsExec | PsExec | 100060–100061 | 
+| T1055.001 | Process Injection — DLL Injection | Atomic Red Team | 100070–100073 | 
+| T1070.001 | Indicator Removal: Clear Event Logs | Atomic Red Team | 100080–100082 | 
+| T1218.011 | LOLBas: Rundll32 Abuse | Atomic Red Team | 100090–100091 | 
+| T1105 | Ingress Tool Transfer (certutil/bitsadmin) | Atomic Red Team | 100100–100101 | 
+| T1082 | System Information Discovery / Recon | Atomic Red Team | 100110–100114 | 
+| T1027 | Obfuscated Files / Payload Deobfuscation | Atomic Red Team | 100120–100122 |
 
----
+2. Quan sát log thô đổ về Wazuh Dashboard 
+3. Viết Detection Rule tùy chỉnh vào [local_rules.xml](./local_rules.xml) chứa toàn bộ 36 Detection Rules tùy chỉnh (Rule ID `100001`–`100122`) ánh xạ trực tiếp với 13 kỹ thuật tấn công theo khung MITRE ATT&CK. Bao gồm các cơ chế: single-event matching, threshold-based detection (`frequency`/`timeframe`), và process-chain correlation (parent → child process).
+![rule](../screenshots/Wazuh_detection_rules.jpg)
+4. Kiểm thử lại bằng cách tái giả lập tấn công 
+```
+Invoke-AtomicTest T1082 -TestNumbers 1
+Invoke-AtomicTest T1059.001 -TestNumbers 1 
+Invoke-AtomicTest T1547.001 -TestNumbers 1
+Invoke-AtomicTest T1053.005 -TestNumbers 1
+Invoke-AtomicTest T1136.001 -TestNumbers 8
+Invoke-AtomicTest T1003.001 -TestNumbers 1
+Invoke-AtomicTest T1055.001 -TestNumbers 2 
+Invoke-AtomicTest T1218.011 -TestNumbers 1
+Invoke-AtomicTest T1105 -TestNumbers 7 
+Invoke-AtomicTest T1027 -TestNumbers 2 
+1..10 | ForEach-Object { net use \\127.0.0.1\IPC$ /user:fakeuser "WrongPass$_" 2>$null; Start-Sleep -Milliseconds 500 }
+& "$env:TEMP\PsExec.exe" -accepteula \\127.0.0.1 cmd.exe /c "whoami"
+Invoke-AtomicTest T1070.001 -TestNumbers 1
+```
+5. Xác nhận cảnh báo được kích hoạt đúng.
+![1](../screenshots/Wazuh_security_alerts_1.jpg)
+![2](../screenshots/Wazuh_security_alerts_2.jpg)
+![3](../screenshots/Wazuh_security_alerts_3.jpg)
+![4](../screenshots/Wazuh_security_alerts_4.jpg)
+![5](../screenshots/Wazuh_security_alerts_5.jpg)
+![6](../screenshots/Wazuh_security_alerts_6.jpg)
 
-## 📂 Giải thích các File Cấu hình
+## Kết quả đạt được
 
-- [sysmonconfig.xml](./sysmonconfig.xml): Bộ luật chuẩn của Sysmon (SwiftOnSecurity) cài trên máy trạm Windows, được tối ưu để giảm tải các sự kiện rác đồng thời tập trung bắt sóng chính xác các kỹ thuật tấn công phổ biến.
-
-- [wazuh_agent_ossec.conf](./wazuh_agent_ossec.conf): File cấu hình trên Windows cài Wazuh Agent để khai báo địa chỉ IP của Wazuh Manager và quy định các dạng event log sẽ thu thập (bao gồm kênh Sysmon Operational).
-
-- [wazuh_manager_filebeat.yml](./wazuh_manager_filebeat.yml) / [wazuh_manager_ossec.conf](./wazuh_manager_ossec.conf): Cấu hình trên máy chủ SIEM (Wazuh Manager) phụ trách định tuyến, tích hợp chia sẻ log và kích hoạt lưu trữ archive JSON phục vụ phân tích.
-
-- [docker-compose.yml](./docker-compose.yml): Kịch bản tự động hóa triển khai bằng Docker. Cho phép kéo image, gắn volume, mở cấu hình mạng và dựng toàn bộ nền tảng TheHive kèm Datastore chỉ bằng một lệnh duy nhất.
-
-- [application.conf](./application.conf): Cấu hình chính của TheHive, định nghĩa khóa bí mật, kết nối đến Elasticsearch, Cassandra và chuẩn bị cổng giao tiếp.
-
-- [cassandra.yaml](./cassandra.yaml) / [elasticsearch.yml](./elasticsearch.yml) / [jvm.options](./jvm.options): Các tinh chỉnh kỹ thuật, phân bổ tối ưu hóa bộ nhớ cho dịch vụ và cấu hình các cụm dữ liệu phân tán hỗ trợ background cho TheHive.
-
----
-
-## 📚 Deployment Guides
-
-- [00-Ubuntu-Server-Setup.md](../docs/00-Ubuntu-Server-Setup.md): Các bước chuẩn bị, cài đặt môi trường cơ bản trên máy chủ Ubuntu trước khi triển khai hệ thống lõi.
-- [01-Wazuh-Manager-Installation.md](../docs/01-Wazuh-Manager-Installation.md): Hướng dẫn cài đặt, thiết lập và cấu hình trung tâm SIEM Wazuh.
-- [02-TheHive-Docker-Deployment.md](../docs/02-TheHive-Docker-Deployment.md): Hướng dẫn khởi chạy nền tảng TheHive siêu tốc thông qua Docker để vận hành quy trình quản lý sự cố.
-- [03-Windows-Endpoint-Setup.md](../docs/03-Windows-Endpoint-Setup.md): Các bước cài đặt máy tính mục tiêu, tích hợp giám sát Sysmon và kết nối Wazuh Agent vào mạng lưới truyền log trung tâm.
-
----
-
-## 🎯 Kết quả đạt được
-
-- ✅ Thiết lập hệ thống **SIEM/EDR** giám sát **50+ sự kiện hệ thống** trên nền tảng Wazuh + Sysmon.
-- ✅ Xây dựng **10+ Detection Rules** tùy chỉnh (`local_rules.xml`) ánh xạ trực tiếp với các kỹ thuật trong khung **MITRE ATT&CK**.
-- ✅ Triển khai pipeline dữ liệu khép kín: **Endpoint → Sysmon → Wazuh → TheHive** với cơ chế cảnh báo tự động.
-- ✅ Vận hành thành công **Attack Simulation** bằng Atomic Red Team để kiểm thử và cải thiện khả năng phát hiện.
+- Thiết lập hệ thống SIEM/EDR thu thập Telemetry từ 3 nguồn log chính (Sysmon, Windows Security, Windows System) giám sát 12 Event ID quan trọng trên Endpoint Windows.
+- Xây dựng 36 Detection Rules tùy chỉnh trong `local_rules.xml` (Rule ID `100001`–`100122`) bao phủ 13 kỹ thuật MITRE ATT&CK trên 8 Tactics (Execution, Persistence, Privilege Escalation, Defense Evasion, Credential Access, Discovery, Lateral Movement, Command & Control).
+- Áp dụng 3 cơ chế phát hiện: single-event matching, threshold-based detection (brute force: 5 lần/60 giây, recon: 5 lệnh/60 giây), và process-chain correlation (parent → child process, rule inheritance `if_sid`).
+-  Triển khai pipeline dữ liệu khép kín: Endpoint → Sysmon → Wazuh Agent → Wazuh Manager → Dashboard với cơ chế cảnh báo tự động theo cấp độ nghiêm trọng (Level 5–15).

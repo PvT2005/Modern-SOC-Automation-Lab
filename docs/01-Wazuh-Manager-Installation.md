@@ -12,7 +12,7 @@ sudo apt update && sudo apt upgrade -y
 curl -sO https://packages.wazuh.com/4.x/wazuh-install.sh
 sudo bash ./wazuh-install.sh -a
 ```
-⚠️ Lưu ý quan trọng: Khi kết thúc, màn hình Terminal sẽ in ra thông tin đăng nhập (Username là admin và Password được sinh ngẫu nhiên).
+
  ## 3. Kiểm tra trạng thái dịch vụ
 ```bash
 sudo systemctl status wazuh-manager
@@ -25,35 +25,26 @@ sudo systemctl status wazuh-manager
 ![wazuh-dashboard](../screenshots/Wazuh-Dashboard.jpg)
 
 
-## 5. Cấu hình Wazuh phục vụ tự động hóa
+## 5. Tối ưu cấu hình cảnh báo trên Wazuh Manager
 
-Dựa trên cấu trúc kiến trúc SOC, để phục vụ cho các Playbooks tự động hóa (SOAR/Shuffle) và nạp dữ liệu telemetry dạng thô đầy đủ nhất, chúng ta cần cấu hình Wazuh lưu Archive log vào định dạng JSON.
+Để tối ưu hóa dung lượng lưu trữ và giảm thiểu cảnh báo rác, chúng ta sẽ cấu hình Wazuh chỉ nhận và lưu trữ các log đã kích hoạt thành công rule, đồng thời tùy chỉnh mức độ cảnh báo hiển thị trên Dashboard.
 
-### Kích hoạt Logall JSON trong `ossec.conf`
-Tính năng lưu trữ toàn bộ event thô bị tắt mặc định để tối ưu dung lượng. Để hệ thống có đủ log phân tích ta cấu hình file [/var/ossec/etc/ossec.conf](../Phase-2-Detection/wazuh_manager_ossec.conf)
+### Tắt tính năng lưu trữ toàn bộ Log (Logall) và cấu hình Alert Level
+Truy cập và chỉnh sửa file [/var/ossec/etc/ossec.conf](../Phase-1-Detection/wazuh_manager_ossec.conf). Đảm bảo rằng `<logall>` và `<logall_json>` được đặt thành `no`  để Wazuh không lưu trữ các log sự kiện thô không cần thiết.
 
-Sửa hai giá trị `<logall>` và `<logall_json>` từ `no` thành `yes`:
-```xml
-  <global>
-    <jsonout_output>yes</jsonout_output>
-    <alerts_log>yes</alerts_log>
-    <logall>yes</logall>
-    <logall_json>yes</logall_json>
-    ...
-```
+Đồng thời, tìm đến thẻ `<alerts>` và thay đổi giá trị `<log_alert_level>` thành `5` (Mặc định là 3). Việc này giúp Dashboard của hệ thống chỉ ghi nhận và hiển thị các cảnh báo từ Level 5 trở lên:
 
+### Cấu hình Filebeat chỉ đọc dữ liệu Alerts
+Do chúng ta không lưu trữ toàn bộ log (Archive), cấu hình Filebeat cần được thiết lập chỉ đọc luồng dữ liệu Alerts, vô hiệu hóa việc đọc luồng Archives. 
 
-### Cấu hình Filebeat đọc file `archives.json`
-Wazuh chỉ tạo file `/var/ossec/logs/archives/archives.json` nhưng chúng ta cần Filebeat đọc và gửi nó đến bộ cài Indexer. 
-
-Cấu hình file [/etc/filebeat/filebeat.yml](../Phase-2-Detection/wazuh_manager_filebeat.yml)
+Chỉnh sửa file cấu hình [/etc/filebeat/filebeat.yml](../Phase-1-Detection/wazuh_manager_filebeat.yml):
 
 
 ### Khởi động lại dịch vụ
-Hệ thống cần được khởi động lại để áp dụng module và config vừa nạp:
+Hệ thống cần được khởi động lại để áp dụng cấu hình vừa chỉnh sửa:
 
 ```bash
-sudo systemctl restart wazuh-manager
+sudo systemctl restart wazuh-manager.service
 sudo systemctl restart filebeat
 ```
 
