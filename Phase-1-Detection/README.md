@@ -22,7 +22,7 @@ Giai đoạn này triển khai kiến trúc SIEM với bộ Detection Rules tùy
 
 - **Attack Simulation**: Atomic Red Team thực thi các kịch bản tấn công được lập trình sẵn theo từng Technique ID của MITRE ATT&CK. Đây là bước tạo ra sự kiện để xây dựng và kiểm thử Detection Rules.
 
-- **Analysis & Detection**: Wazuh Manager tiếp nhận và bắt đầu bóc tách, chuẩn hóa dữ liệu log. Hệ thống đối chiếu với bộ luật tùy chỉnh. Nếu một tiến trình thỏa mãn điều kiện nghi ngờ, hệ thống lập tức kích hoạt cảnh báo.
+- **Analysis & Detection**: Wazuh Manager tiếp nhận và bắt đầu bóc tách, chuẩn hóa dữ liệu log. Hệ thống đối chiếu với bộ luật tùy chỉnh. Nếu mFột tiến trình thỏa mãn điều kiện nghi ngờ, hệ thống lập tức kích hoạt cảnh báo.
 
 - **Alerting**: Cảnh báo được ghi nhận trên Wazuh Dashboard kèm chi tiết đầy đủ về Rule ID, mức độ nghiêm trọng, thông tin máy trạm bị ảnh hưởng và ánh xạ MITRE ATT&CK. Đây là đầu ra của Phase 1, sẵn sàng chuyển tiếp sang Phase 2 qua Webhook.
 
@@ -76,7 +76,7 @@ Invoke-AtomicTest T1070.001 -TestNumbers 1
 
 ## Kết quả đạt được
 
-- Thiết lập hệ thống SIEM/EDR thu thập Telemetry từ 3 nguồn log chính (Sysmon, Windows Security, Windows System) giám sát 12 Event ID quan trọng trên Endpoint Windows.
-- Xây dựng 36 Detection Rules tùy chỉnh trong `local_rules.xml` (Rule ID `100001`–`100122`) bao phủ 13 kỹ thuật MITRE ATT&CK trên 8 Tactics (Execution, Persistence, Privilege Escalation, Defense Evasion, Credential Access, Discovery, Lateral Movement, Command & Control).
+- Thiết lập hệ thống SIEM/EDR thu thập Telemetry từ 3 nguồn log chính: Sysmon, Windows Security, Windows System. Giám sát 12 Event ID quan trọng trên Endpoint Windows.
+- Xây dựng 36 Detection Rules tùy chỉnh trong `local_rules.xml` gồm Rule ID `100001`–`100122` bao phủ 13 kỹ thuật MITRE ATT&CK trên 8 Tactics gồm: Execution, Persistence, Privilege Escalation, Defense Evasion, Credential Access, Discovery, Lateral Movement, Command & Control.
 - Áp dụng 3 cơ chế phát hiện: single-event matching, threshold-based detection (brute force: 5 lần/60 giây, recon: 5 lệnh/60 giây), và process-chain correlation (parent → child process, rule inheritance `if_sid`).
 -  Triển khai pipeline dữ liệu khép kín: Endpoint → Sysmon → Wazuh Agent → Wazuh Manager → Dashboard với cơ chế cảnh báo tự động theo cấp độ nghiêm trọng (Level 5–15).
