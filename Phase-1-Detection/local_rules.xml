@@ -22,14 +22,6 @@
     <group>credential_dumping,critical</group>
   </rule>
 
-
-  <!-- ============================================================
-       T1059.001 — Command & Scripting: PowerShell Execution
-       Tool     : Atomic Red Team  →  Invoke-AtomicTest T1059.001
-       Source   : Sysmon EID 1 / Windows EID 4688
-       Logic    : PowerShell launched with encoded/bypass/hidden flags
-       ============================================================ -->
-
   <rule id="100010" level="5">
     <if_group>windows</if_group>
     <field name="win.system.eventID">^1$</field>
@@ -59,14 +51,6 @@
     <group>powershell,download_cradle,high_severity</group>
   </rule>
 
-
-  <!-- ============================================================
-       T1547.001 — Persistence: Registry Run Keys
-       Tool     : Atomic Red Team  →  Invoke-AtomicTest T1547.001
-       Source   : Sysmon EID 13 (RegistryEvent — Value Set)
-       Logic    : Write to known autorun Registry locations
-       ============================================================ -->
-
   <rule id="100020" level="10">
     <if_group>windows</if_group>
     <field name="win.system.eventID">^13$</field>
@@ -79,7 +63,6 @@
     <group>persistence,registry,high_severity</group>
   </rule>
 
-  <!-- Escalation: written by a non-system/installer process -->
   <rule id="100021" level="13">
     <if_sid>100020</if_sid>
     <field name="win.eventdata.image" type="pcre2">(?i)(cmd\.exe|powershell\.exe|wscript\.exe|cscript\.exe|mshta\.exe|regsvr32\.exe|reg\.exe)</field>
@@ -90,14 +73,6 @@
     <group>persistence,registry,critical</group>
   </rule>
 
-
-  <!-- ============================================================
-       T1053.005 — Scheduled Task / Job: Scheduled Task
-       Tool     : Atomic Red Team  →  Invoke-AtomicTest T1053.005
-       Source   : Windows Security EID 4698 (Task Created)
-       Logic    : Task created by non-system process with shell payload
-       ============================================================ -->
-
   <rule id="100030" level="8">
     <if_group>windows</if_group>
     <field name="win.system.eventID">^4698$</field>
@@ -105,7 +80,6 @@
     <group>scheduled_task,windows</group>
   </rule>
 
-  <!-- Alert: task content references shell or scripting interpreter -->
   <rule id="100031" level="12">
     <if_sid>100030</if_sid>
     <field name="win.eventdata.taskContent" type="pcre2">(?i)(cmd\.exe|powershell\.exe|wscript|cscript|mshta|regsvr32|rundll32|certutil)</field>
@@ -116,7 +90,6 @@
     <group>scheduled_task,persistence,high_severity</group>
   </rule>
 
-  <!-- Backup: Sysmon EID 1 — schtasks.exe creating task with shell payload -->
   <rule id="100032" level="12">
     <if_group>windows</if_group>
     <field name="win.system.eventID">^1$</field>
@@ -131,14 +104,6 @@
   </rule>
 
 
-  <!-- ============================================================
-       T1136.001 — Create Account: Local Account
-       Tool     : Atomic Red Team  →  Invoke-AtomicTest T1136.001
-       Source   : Windows Security EID 4720 (Account Created)
-                  + EID 4732 (Member Added to local Administrators)
-       Logic    : New account created then immediately added to admins
-       ============================================================ -->
-
   <rule id="100040" level="8">
     <if_group>windows</if_group>
     <field name="win.system.eventID">^4720$</field>
@@ -149,7 +114,6 @@
     <group>account_creation,windows</group>
   </rule>
 
-  <!-- Alert: new account added to local Administrators group -->
   <rule id="100041" level="13">
     <if_group>windows</if_group>
     <field name="win.system.eventID">^4732$</field>
@@ -162,14 +126,6 @@
   </rule>
 
 
-  <!-- ============================================================
-       T1110.001 — Brute Force: Password Guessing
-       Tool     : Atomic Red Team  →  Invoke-AtomicTest T1110.001
-       Source   : Windows Security EID 4625 (Logon Failure)
-       Logic    : 5+ failures from same IP within 60 seconds
-       ============================================================ -->
-
-  <!-- Base rule: single logon failure (low noise, level 3) -->
   <rule id="100050" level="5">
     <if_sid>60122</if_sid>
     <field name="win.system.eventID">^4625$</field>
@@ -177,7 +133,6 @@
     <group>authentication_failure,windows</group>
   </rule>
 
-  <!-- Threshold: Brute Force — same IP, same target user -->
   <rule id="100051" level="12" frequency="5" timeframe="60">
     <if_matched_sid>100050</if_matched_sid>
     <same_field>agent.id</same_field>
@@ -189,7 +144,6 @@
   </rule>
 
 
-  <!-- Escalation: Sustained attack — 100 attempts in 5 minutes -->
   <rule id="100053" level="15" frequency="100" timeframe="300">
     <if_matched_sid>100050</if_matched_sid>
     <same_field>agent.id</same_field>
@@ -201,14 +155,6 @@
   </rule>
 
 
-  <!-- ============================================================
-       T1021.002 — Lateral Movement: SMB / PsExec
-       Tool     : Atomic Red Team  →  Invoke-AtomicTest T1021.002
-       Source   : Sysmon EID 1 (psexec launch) + EID 3 (SMB conn)
-                  + Windows Security EID 5140 (ADMIN$ share access)
-       ============================================================ -->
-
-  <!-- Alert: PsExec or similar remote execution tools -->
   <rule id="100060" level="12">
     <if_group>windows</if_group>
     <field name="win.system.eventID">^1$</field>
@@ -221,7 +167,6 @@
     <group>lateral_movement,high_severity</group>
   </rule>
 
-  <!-- Alert: ADMIN$ or C$ share accessed over network -->
   <rule id="100061" level="10">
     <if_group>windows</if_group>
     <field name="win.system.eventID">^5140$</field>
@@ -232,17 +177,6 @@
     </mitre>
     <group>lateral_movement,smb</group>
   </rule>
-
-
-  <!-- ============================================================
-       T1055.001 — Process Injection: DLL Injection
-       Tool     : Atomic Red Team  →  Invoke-AtomicTest T1055.001 -TestNumbers 2
-       Test 2   : WinPwn UsoClient DLL side-loading technique
-       Source   : Sysmon EID 8 (CreateRemoteThread)
-                  Sysmon EID 1 (Process Create — DLL load tools)
-                  Sysmon EID 11 (FileCreate — DLL dropped by script)
-       Logic    : Cross-process thread injection OR DLL side-loading
-       ============================================================ -->
 
   <!-- Base: any CreateRemoteThread event -->
   <rule id="100070" level="8">
@@ -256,7 +190,6 @@
     <group>process_injection,windows</group>
   </rule>
 
-  <!-- Escalation: injection into high-value system processes -->
   <rule id="100071" level="14">
     <if_sid>100070</if_sid>
     <field name="win.eventdata.targetImage" type="pcre2">(?i)(svchost\.exe|lsass\.exe|explorer\.exe|winlogon\.exe|csrss\.exe|spoolsv\.exe)</field>
@@ -267,7 +200,6 @@
     <group>process_injection,critical</group>
   </rule>
 
-  <!-- Test 2 detection: PowerShell downloading DLL injection/side-loading scripts -->
   <rule id="100072" level="12">
     <if_sid>100010</if_sid>
     <field name="win.eventdata.commandLine" type="pcre2">(?i)(DLL.?(Inject|Load|Side|System)|Get-System|Invoke-(DllInjection|ReflectivePEInjection|Shellcode)|VirtualAllocEx|WriteProcessMemory|CreateRemoteThread|UsoClient)</field>
@@ -278,7 +210,6 @@
     <group>process_injection,dll_sideloading,high_severity</group>
   </rule>
 
-  <!-- DLL file dropped in system directory by scripting engine -->
   <rule id="100073" level="13">
     <if_group>windows</if_group>
     <field name="win.system.eventID">^11$</field>
@@ -292,13 +223,6 @@
     <group>process_injection,dll_sideloading,critical</group>
   </rule>
 
-
-  <!-- ============================================================
-       T1070.001/004 — Indicator Removal: Clear Windows Event Logs
-       Tool     : Atomic Red Team  →  Invoke-AtomicTest T1070.001
-       Source   : Windows Security EID 1102 (Audit log cleared)
-                  Windows System EID 104   (Log cleared via wevtutil)
-       ============================================================ -->
 
   <rule id="100080" level="14">
     <if_group>windows</if_group>
@@ -320,7 +244,6 @@
     <group>defense_evasion,log_clearing,critical</group>
   </rule>
 
-  <!-- Alert: wevtutil or Clear-EventLog command -->
   <rule id="100082" level="13">
     <if_group>windows</if_group>
     <field name="win.system.eventID">^1$</field>
@@ -333,14 +256,6 @@
     <group>defense_evasion,log_clearing,high_severity</group>
   </rule>
 
-
-  <!-- ============================================================
-       T1218.011 — Living off the Land: Rundll32 Abuse
-       Tool     : Atomic Red Team  →  Invoke-AtomicTest T1218.011
-       Source   : Sysmon EID 1
-       Logic    : rundll32.exe called with non-standard arguments
-                  (URL, JavaScript, ShellExecute, etc.)
-       ============================================================ -->
 
   <rule id="100090" level="11">
     <if_group>windows</if_group>
@@ -355,7 +270,6 @@
     <group>defense_evasion,lolbas,high_severity</group>
   </rule>
 
-  <!-- Escalation: rundll32 spawning child shell -->
   <rule id="100091" level="13">
     <if_group>windows</if_group>
     <field name="win.system.eventID">^1$</field>
@@ -369,14 +283,6 @@
     <group>defense_evasion,lolbas,critical</group>
   </rule>
 
-
-  <!-- ============================================================
-       T1105 — Ingress Tool Transfer
-       Tool     : Atomic Red Team  →  Invoke-AtomicTest T1105
-       Source   : Sysmon EID 1
-       Logic    : certutil, bitsadmin, curl used to download files
-       ============================================================ -->
-
   <rule id="100100" level="11">
     <if_group>windows</if_group>
     <field name="win.system.eventID">^1$</field>
@@ -389,7 +295,6 @@
     <group>command_and_control,tool_transfer,high_severity</group>
   </rule>
 
-  <!-- Escalation: executable file created in suspicious directory -->
   <rule id="100101" level="13">
     <if_group>windows</if_group>
     <field name="win.system.eventID">^11$</field>
@@ -402,16 +307,6 @@
     <group>command_and_control,tool_transfer,critical</group>
   </rule>
 
-
-  <!-- ============================================================
-       T1082 — System Information Discovery / Recon
-       Tool     : Atomic Red Team  →  Invoke-AtomicTest T1082
-       Source   : Sysmon EID 1
-       Logic    : Rapid execution of multiple discovery commands
-                  (whoami, ipconfig, net user, systeminfo, etc.)
-       ============================================================ -->
-
-  <!-- Base: single recon command (low level, used for threshold) -->
   <rule id="100110" level="3">
     <if_group>windows</if_group>
     <field name="win.system.eventID">^1$</field>
@@ -421,7 +316,6 @@
     <group>discovery,windows</group>
   </rule>
 
-  <!-- Threshold: 5 recon commands in 60 seconds = active discovery -->
   <rule id="100111" level="11" frequency="5" timeframe="60">
     <if_matched_sid>100110</if_matched_sid>
     <same_field>agent.id</same_field>
@@ -432,7 +326,6 @@
     <group>discovery,reconnaissance,high_severity</group>
   </rule>
 
-  <!-- Specific: net user / net localgroup — user/group enumeration -->
   <rule id="100112" level="10">
     <if_group>windows</if_group>
     <field name="win.system.eventID">^1$</field>
@@ -445,7 +338,6 @@
     <group>discovery,account_enumeration</group>
   </rule>
 
-  <!-- Single-event: systeminfo.exe — strong recon indicator on its own -->
   <rule id="100113" level="8">
     <if_group>windows</if_group>
     <field name="win.system.eventID">^1$</field>
@@ -457,8 +349,6 @@
     </mitre>
     <group>discovery,reconnaissance,high_severity</group>
   </rule>
-
-  <!-- Single-event: reg.exe querying system info keys -->
   <rule id="100114" level="8">
     <if_group>windows</if_group>
     <field name="win.system.eventID">^1$</field>
@@ -471,15 +361,6 @@
     </mitre>
     <group>discovery,reconnaissance,high_severity</group>
   </rule>
-
-
-  <!-- ============================================================
-       T1027 — Obfuscated Files or Information
-       Tool     : Atomic Red Team  →  Invoke-AtomicTest T1027 -TestNumbers 2
-       Test 2   : Execute base64-encoded PowerShell command
-       Source   : Sysmon EID 1
-       Logic    : certutil -decode, base64 decoding, PowerShell -EncodedCommand
-       ============================================================ -->
 
   <rule id="100120" level="11">
     <if_group>windows</if_group>
@@ -504,8 +385,7 @@
     </mitre>
     <group>defense_evasion,obfuscation,high_severity</group>
   </rule>
-
-  <!-- Test 2: PowerShell -EncodedCommand execution — base64 obfuscation -->
+  
   <rule id="100122" level="12">
     <if_sid>100010</if_sid>
     <field name="win.eventdata.commandLine" type="pcre2">(?i)(-EncodedCommand\s+[A-Za-z0-9+/=]{20}|-enc\s+[A-Za-z0-9+/=]{20})</field>
