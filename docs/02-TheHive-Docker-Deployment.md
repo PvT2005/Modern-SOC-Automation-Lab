@@ -1,6 +1,6 @@
-# Deploying TheHive using Docker Compose
+# Cài đặt TheHive dùng Docker
 
-TheHive là nền tảng Case Management dành riêng cho các đội phản ứng sự cố (CERT/SOC). Để quản lý dễ dàng và tách biệt môi trường, hệ thống này được triển khai dưới dạng Docker Containers.
+ Để quản lý dễ dàng và tách biệt môi trường, hệ thống này được triển khai dưới dạng Docker Containers.
 
 ## 1. Cài đặt Docker và Docker Compose
 ```bash
@@ -38,27 +38,27 @@ nano ./cassandra_config/cassandra.yaml
 
 
 ### Cấu hình Elasticsearch và giới hạn RAM
-Để TheHive có thể Index một cách ổn định, ta tạo cấu hình cho [elasticsearch.yml](../Phase-2-Automation/elasticsearch.yml) và thiết lập giới hạn RAM để tránh lỗi Crash hệ thống:
+- Để TheHive có thể Index một cách ổn định, ta tạo cấu hình cho [elasticsearch.yml](../Phase-2-Automation/elasticsearch.yml) và thiết lập giới hạn RAM để tránh lỗi Crash hệ thống:
 ```bash
 mkdir -p ./elasticsearch_config
 mkdir -p ./elasticsearch_data ./cassandra_data
 nano ./elasticsearch_config/elasticsearch.yml
 ```
 
-Tiếp theo, tạo file cấu hình [jvm.options](../Phase-2-Automation/jvm.options) cho Java Virtual Machine để giới hạn sử dụng 2GB RAM và fix lỗi `log4j2`:
+- Tiếp theo, tạo file cấu hình [jvm.options](../Phase-2-Automation/jvm.options) cho Java Virtual Machine để giới hạn sử dụng 2GB RAM và fix lỗi `log4j2`:
 ```bash
 nano ./elasticsearch_config/jvm.options
 ```
 
 
 ### Cấu hình TheHive
-TheHive yêu cầu một Secret Key để bảo mật phiên đăng nhập và mã hóa.
-Chạy lệnh sau trên Terminal để lấy ra một chuỗi ngẫu nhiên và sao chép lại:
+- TheHive yêu cầu một Secret Key để bảo mật phiên đăng nhập và mã hóa.
+- Chạy lệnh sau trên Terminal để lấy ra một chuỗi ngẫu nhiên và sao chép lại:
 ```bash
 cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 64 | head -n 1
 ```
 
-Sau đó tạo thư mục và mở file cấu hình [application.conf](../Phase-2-Automation/application.conf) chính của TheHive:
+- Sau đó tạo thư mục và mở file cấu hình [application.conf](../Phase-2-Automation/application.conf) chính của TheHive:
 ```bash
 mkdir -p ./thehive_config
 nano ./thehive_config/application.conf
@@ -66,9 +66,8 @@ nano ./thehive_config/application.conf
 
 
 ### Cập nhật lại `docker-compose.yml`
-Khi các file cấu hình đã được tạo, bạn sửa lại file [docker-compose.yml](../Phase-2-Automation/docker-compose.yml) 
 
-Cuối cùng, khởi động lại toàn bộ stack để nạp cấu hình mới:
+Khởi động lại toàn bộ stack để nạp cấu hình mới:
 ```bash
 sudo docker-compose down
 sudo docker-compose up -d

@@ -1,16 +1,13 @@
-# 🎯 Windows 10 Telemetry Setup (Sysmon & Wazuh Agent)
+# 🎯 Windows 10 Telemetry (Sysmon & Wazuh Agent)
 
-Mục tiêu của bước này là biến máy tính Windows thông thường thành một "cảm biến" thu thập dữ liệu hành vi chuyên sâu (Telemetry) và liên tục đẩy về SIEM trung tâm tại Ubuntu Server (192.168.56.10).
+Mục tiêu của bước này là biến máy tính Windows thông thường thành một cảm biến thu thập dữ liệu hành vi và liên tục đẩy về SIEM trung tâm tại Ubuntu Server.
 
 ## 1. Cài đặt Sysmon với bộ cấu hình SwiftOnSecurity
-Windows Event Log mặc định rất hạn chế. Sysmon sẽ giúp bắt được các hành vi như: Process Creation, Network Connection, và Driver Load.
-
-- Tải công cụ: - Tải Sysmon từ bộ Sysinternals Suite.
-
-  - Tải file cấu hình chuẩn [tại đây](../Phase-1-Detection/sysmonconfig.xml)
+- Windows Event Log mặc định rất hạn chế. Sysmon sẽ giúp bắt được các hành vi như: Process Creation, Network Connection, và Driver Load.
+  - File cấu hình chuẩn [tại đây](../Phase-1-Detection/sysmonconfig.xml)
 
 
-Cài đặt: Mở PowerShell quyền Admin, di chuyển vào thư mục chứa Sysmon và chạy lệnh:
+- Mở PowerShell quyền Admin, di chuyển vào thư mục chứa Sysmon và chạy lệnh:
 
 ```bash
 .\Sysmon64.exe -i sysmonconfig.xml 

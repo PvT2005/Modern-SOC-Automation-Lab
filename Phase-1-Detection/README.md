@@ -1,6 +1,6 @@
 # Phase 1: Lắng nghe, Giám sát và Phát hiện Mối đe dọa
 
-Thiết lập nền tảng giám sát toàn diện — từ thu thập Telemetry chuyên sâu trên Endpoint đến phân tích, phát hiện và quản lý cảnh báo theo khung MITRE ATT&CK.
+Thiết lập nền tảng giám sát từ thu thập Telemetry trên Endpoint đến phân tích, phát hiện và quản lý cảnh báo theo khung MITRE ATT&CK.
 
 Giai đoạn này triển khai kiến trúc SIEM với bộ Detection Rules tùy chỉnh. Tại đây, mọi sự kiện, luồng mạng và hành vi trên máy trạm sẽ được tổng hợp, phân tích dựa trên các luật cảnh báo để chỉ mặt đặt tên các rủi ro bảo mật trước khi chúng gây hại lớn hơn.
 
@@ -8,7 +8,7 @@ Giai đoạn này triển khai kiến trúc SIEM với bộ Detection Rules tùy
 
 ## Công cụ sử dụng
 
-- **Wazuh**: Đóng vai trò là trung tâm "Thu thập và Phân tích". Thu nhận log, chạy đối chiếu với thư viện luật và đánh giá các hành vi bất thường.
+- **Wazuh**: Đóng vai trò thu thập và phân tích. Thu nhận log, chạy đối chiếu với rule và đánh giá các hành vi bất thường.
 
 - **Sysmon**: Đóng vai trò giám sát sâu trên Windows. Theo dõi mọi hành động khởi tạo tiến trình, chỉnh sửa Registry hay kết nối mạng và báo cáo lại với độ chi tiết vượt trội so với Windows Event Log mặc định.
 
@@ -22,7 +22,7 @@ Giai đoạn này triển khai kiến trúc SIEM với bộ Detection Rules tùy
 
 - **Attack Simulation**: Atomic Red Team thực thi các kịch bản tấn công được lập trình sẵn theo từng Technique ID của MITRE ATT&CK. Đây là bước tạo ra sự kiện để xây dựng và kiểm thử Detection Rules.
 
-- **Analysis & Detection**: Wazuh Manager tiếp nhận và bắt đầu bóc tách, chuẩn hóa dữ liệu log. Hệ thống đối chiếu với bộ luật tùy chỉnh. Nếu mFột tiến trình thỏa mãn điều kiện nghi ngờ, hệ thống lập tức kích hoạt cảnh báo.
+- **Analysis & Detection**: Wazuh Manager tiếp nhận và bắt đầu bóc tách, chuẩn hóa dữ liệu log. Hệ thống đối chiếu với bộ luật tùy chỉnh. Nếu một tiến trình thỏa mãn điều kiện nghi ngờ, hệ thống lập tức kích hoạt cảnh báo.
 
 - **Alerting**: Cảnh báo được ghi nhận trên Wazuh Dashboard kèm chi tiết đầy đủ về Rule ID, mức độ nghiêm trọng, thông tin máy trạm bị ảnh hưởng và ánh xạ MITRE ATT&CK. Đây là đầu ra của Phase 1, sẵn sàng chuyển tiếp sang Phase 2 qua Webhook.
 
@@ -48,7 +48,7 @@ Giai đoạn này triển khai kiến trúc SIEM với bộ Detection Rules tùy
 | T1027 | Obfuscated Files / Payload Deobfuscation | Atomic Red Team | 100120–100122 |
 
 2. Quan sát log thô đổ về Wazuh Dashboard 
-3. Viết Detection Rule tùy chỉnh vào [local_rules.xml](./local_rules.xml) chứa toàn bộ 36 Detection Rules tùy chỉnh (Rule ID `100001`–`100122`) ánh xạ trực tiếp với 13 kỹ thuật tấn công theo khung MITRE ATT&CK. Bao gồm các cơ chế: single-event matching, threshold-based detection (`frequency`/`timeframe`), và process-chain correlation (parent → child process).
+3. Viết Detection Rule vào [local_rules.xml](./local_rules.xml) chứa toàn bộ 36 Detection Rules (Rule ID `100001`–`100122`) ánh xạ trực tiếp với 13 kỹ thuật tấn công theo khung MITRE ATT&CK. 
 ![rule](../screenshots/Wazuh_detection_rules.jpg)
 4. Kiểm thử lại bằng cách tái giả lập tấn công 
 ```
@@ -76,7 +76,7 @@ Invoke-AtomicTest T1070.001 -TestNumbers 1
 
 ## Kết quả đạt được
 
-- Thiết lập hệ thống SIEM/EDR thu thập Telemetry từ 3 nguồn log chính: Sysmon, Windows Security, Windows System. Giám sát 12 Event ID quan trọng trên Endpoint Windows.
-- Xây dựng 36 Detection Rules tùy chỉnh trong `local_rules.xml` gồm Rule ID `100001`–`100122` bao phủ 13 kỹ thuật MITRE ATT&CK trên 8 Tactics gồm: Execution, Persistence, Privilege Escalation, Defense Evasion, Credential Access, Discovery, Lateral Movement, Command & Control.
-- Áp dụng 3 cơ chế phát hiện: single-event matching, threshold-based detection (brute force: 5 lần/60 giây, recon: 5 lệnh/60 giây), và process-chain correlation (parent → child process, rule inheritance `if_sid`).
--  Triển khai pipeline dữ liệu khép kín: Endpoint → Sysmon → Wazuh Agent → Wazuh Manager → Dashboard với cơ chế cảnh báo tự động theo cấp độ nghiêm trọng (Level 5–15).
+- Dựng xong hệ thống SIEM với Wazuh, thu log từ Sysmon, Windows Security và Windows System trên máy Windows mục tiêu.
+- Viết 36 Detection Rules trong `local_rules.xml` (ID `100001`–`100122`), detect được 13 kỹ thuật MITRE ATT&CK — từ credential dump, persistence, brute force cho đến lateral movement và defense evasion.
+- Có rule match đơn lẻ, có rule dùng `frequency`/`timeframe` để bắt brute force (5 lần fail trong 60s), và có rule chain `if_sid` để theo dõi process cha-con.
+- Log chạy từ Endpoint qua Sysmon → Wazuh Agent → Wazuh Manager → Dashboard, alert tự phân theo mức nghiêm trọng (Level 5–15).

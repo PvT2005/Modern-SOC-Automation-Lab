@@ -19,7 +19,7 @@ ip_malicious = safe_int(ip_malicious_str)
 mitre_id = "N/A" if mitre_id_str.startswith("$") or not mitre_id_str.strip() else mitre_id_str
 
 severity = 1
-tags = ["wazuh", "automated", "phase2"]
+tags = ["wazuh", "automated"]
 enrichment_type = ""
 vt_score = ""
 send_email = False
