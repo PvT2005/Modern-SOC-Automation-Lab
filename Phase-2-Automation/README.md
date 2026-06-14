@@ -211,7 +211,6 @@ Hợp nhất kết quả từ 3 nhánh (Format_VT_Score / Format_IP_Score / Beha
 ---
 
 **Node 6 — Convert_Date**  
-TheHive yêu cầu trường `date` ở định dạng epoch milliseconds, nhưng Wazuh trả về timestamp dạng ISO 8601. Node này chuyển đổi:
 ```python
 import datetime
 timestamp_str = "$exec.all_fields.timestamp"

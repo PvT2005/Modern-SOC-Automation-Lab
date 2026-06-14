@@ -1,8 +1,8 @@
-# Phase 1: Lắng nghe, Giám sát và Phát hiện Mối đe dọa
+# Phase 1: Lắng nghe, giám sát và phát hiện ,mối đe dọa
 
-Thiết lập nền tảng giám sát từ thu thập Telemetry trên Endpoint đến phân tích, phát hiện và quản lý cảnh báo theo khung MITRE ATT&CK.
+- Thiết lập nền tảng giám sát từ thu thập Telemetry trên Endpoint đến phân tích, phát hiện và quản lý cảnh báo theo khung MITRE ATT&CK.
 
-Giai đoạn này triển khai kiến trúc SIEM với bộ Detection Rules tùy chỉnh. Tại đây, mọi sự kiện, luồng mạng và hành vi trên máy trạm sẽ được tổng hợp, phân tích dựa trên các luật cảnh báo để chỉ mặt đặt tên các rủi ro bảo mật trước khi chúng gây hại lớn hơn.
+- Giai đoạn này triển khai kiến trúc SIEM với bộ Detection Rules tùy chỉnh. Tại đây, mọi sự kiện, luồng mạng và hành vi trên máy trạm sẽ được tổng hợp, phân tích dựa trên các luật cảnh báo để chỉ mặt đặt tên các rủi ro bảo mật trước khi chúng gây hại lớn hơn.
 
 
 
@@ -78,5 +78,5 @@ Invoke-AtomicTest T1070.001 -TestNumbers 1
 
 - Dựng xong hệ thống SIEM với Wazuh, thu log từ Sysmon, Windows Security và Windows System trên máy Windows mục tiêu.
 - Viết 36 Detection Rules trong `local_rules.xml` (ID `100001`–`100122`), detect được 13 kỹ thuật MITRE ATT&CK — từ credential dump, persistence, brute force cho đến lateral movement và defense evasion.
-- Có rule match đơn lẻ, có rule dùng `frequency`/`timeframe` để bắt brute force (5 lần fail trong 60s), và có rule chain `if_sid` để theo dõi process cha-con.
+
 - Log chạy từ Endpoint qua Sysmon → Wazuh Agent → Wazuh Manager → Dashboard, alert tự phân theo mức nghiêm trọng (Level 5–15).
