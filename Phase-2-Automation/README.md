@@ -1,95 +1,95 @@
-# Phase 2: SOC Automation & Triage tự động 
+# Phase 2: SOC Automation & Automated Triage
 
- Phase 2 nâng cấp hệ thống lên cấp độ chủ động phản ứng. Toàn bộ hạ tầng (Wazuh Manager, TheHive) đã được dựng sẵn ở Phase 1 thì Phase 2 tập trung vào việc kết nối và tự động hóa chúng lại với nhau thông qua Shuffle.
-
----
-
-## Công cụ sử dụng
-
-- **Shuffle**: Bộ não điều phối tự động mã nguồn mở. Nhận Webhook từ Wazuh, xử lý logic, gọi API bên ngoài và phân phối hành động đến TheHive + Email.
-
-- **VirusTotal API**: Dịch vụ kiểm tra file/hash. Shuffle tự động gọi API này để enrich cảnh báo ngay khi nhận được từ Wazuh để không cần analyst làm thủ công.
-
-- **TheHive**: Nhận Case được tạo tự động từ Shuffle, kèm đầy đủ kết quả Enrichment phục vụ sẵn sàng cho đội SOC điều tra.
-
-- **Email**: Shuffle gửi email thông báo cho SOC Analyst khi có cảnh báo cần can thiệp. Analyst truy cập form phê duyệt trên Shuffle, chọn Continue (block IP) hoặc Stop. Nếu chọn Continue → Wazuh Active Response tự động block IP nguồn tấn công.
-
+Phase 2 takes the system from just detecting to actually responding. All the infrastructure (Wazuh Manager, TheHive) was already set up in Phase 1 — this phase focuses on connecting everything together and automating the workflow through Shuffle.
 
 ---
 
-##  Luồng Tự động hóa
+## Tools Used
+
+- **Shuffle**: Open-source SOAR platform. It receives webhooks from Wazuh, handles the logic, calls external APIs and sends actions to TheHive + Email.
+
+- **VirusTotal API**: File and IP reputation service. Shuffle automatically calls this API to enrich alerts as soon as they come in from Wazuh — no manual lookup needed.
+
+- **TheHive**: Receives cases from Shuffle with enrichment data already filled in — the SOC team can jump straight into investigation.
+
+- **Email**: Shuffle sends email notifications to the SOC analyst when an alert needs action. The analyst opens an approval form on Shuffle, picks Continue (block IP) or Stop. If they pick Continue → Wazuh Active Response automatically blocks the attacker's IP.
+
+
+---
+
+## Automation Flow
 
 
 ```
-[1] Wazuh_alerts (Webhook Trigger)
+[1] Wazuh_alerts
      │
      ▼
-[2] Extract_Hash (Shuffle Tools — regex_capture_group)
-     │  Trích xuất SHA256 
+[2] Extract_Hash
+     │  Extract SHA256 
      │
      ├── [hash ≠ empty] ──► [3A] VT_Hash_Lookup ──► [4A] Format_VT_Score ──┐
      ├── [hash empty + IP] ► [3B] VT_IP_Lookup  ──► [4B] Format_IP_Score ──┤
      └── [hash empty,no IP]► [3C] Behavioral_Skip_VT ──────────────────────┘
-                                                                            │
-                                                                            ▼
-                                                    [5] Dynamic_Severity_Scoring
-                                                         (Execute Python)
-                                                                            │
-                                                                            ▼
-                                                        [6] Convert_Date
-                                                         (Execute Python)
-                                                                            │
-                                                                            ▼
-                                                          [7] The_Hive
-                                                         (Create Alert)
-                                                                            │
-                                                                            ▼
-                                                        [8] Get_Exec_ID
-                                                         (Execute Python)
-                                                                            │
-                                                                [send_email = true]
-                                                                            │
-                                                                            ▼
-                                                          [9] Email_App
-                                                         (SMTP Notification)
-                                                                            │
-                                                                            ▼
-                                                      [10] Email_User_Input
-                                                         (Approval Form)
-                                                                            │
-                                                          [user approved + IP public tồn tại]
-                                                                            │
-                                                                            ▼
-                                                      [11] Get_Wazuh_Token
-                                                         (HTTP — POST)
-                                                                            │
-                                                                            ▼
-                                                    [12] Wazuh_Active_Response
-                                                         (HTTP — PUT)
-                                                      → netsh block IP
+                                                                             │
+                                                                             ▼
+                                                     [5] Dynamic_Severity_Scoring
+                                                        
+                                                                             │
+                                                                             ▼
+                                                         [6] Convert_Date
+                                                          
+                                                                             │
+                                                                             ▼
+                                                           [7] The_Hive
+                                                          
+                                                                             │
+                                                                             ▼
+                                                         [8] Get_Exec_ID
+                                                          
+                                                                             │
+                                                                 [send_email = true]
+                                                                             │
+                                                                             ▼
+                                                           [9] Email_App
+                                                          
+                                                                             │
+                                                                             ▼
+                                                       [10] Email_User_Input
+                                                          
+                                                                             │
+                                                           [user approved + public IP exists]
+                                                                             │
+                                                                             ▼
+                                                       [11] Get_Wazuh_Token
+                                                          
+                                                                             │
+                                                                             ▼
+                                                     [12] Wazuh_Active_Response
+                                                        
+                                                       → netsh block IP
 ```
 
 
 
 
 
-## Triển khai
+## Implementation
 
-### Cài đặt Shuffle SOAR 
+### Install Shuffle SOAR
 
-- Cài Shuffle self-hosted trên Ubuntu Server để kết nối đến IP private `192.168.56.x` của mạng nội bộ 
+- Installed Shuffle self-hosted on the Ubuntu Server so it can reach the private IP `192.168.56.x` on the internal network.
 
 
-- Truy cập giao diện Shuffle từ trình duyệt trên máy Windows:
+- Access the Shuffle UI from the browser on the Windows machine:
 `http://192.168.56.10:3001`
 
-![Giao diện đăng nhập/trang chủ Shuffle](../screenshots/Shuffle.jpg)
+![Shuffle login page](../screenshots/Shuffle.jpg)
 
 ---
 
-### Kết nối Wazuh → Shuffle 
+### Connect Wazuh → Shuffle
 
-Thêm khối `<integration>` vào file `/var/ossec/etc/ossec.conf` trên Wazuh Manager. Chỉ gửi các alert có level từ 8 trở lên để tránh noise:
+Add the `<integration>` block to `/var/ossec/etc/ossec.conf` on the Wazuh Manager. Only alerts with level 8 or higher get forwarded to keep the noise down:
 
 ```xml
 <integration>
@@ -104,40 +104,40 @@ Thêm khối `<integration>` vào file `/var/ossec/etc/ossec.conf` trên Wazuh M
 
 ---
 
-### Xây dựng Workflow trong Shuffle
+### Building the Workflow in Shuffle
 
-Luồng gồm 15 node (13 action + 2 trigger) để tự động phân loại dữ liệu alert và chọn đúng API VirusTotal để gọi:
+The workflow has 15 nodes (13 actions + 2 triggers) that automatically classify alert data and pick the right VirusTotal API to call:
 
-![Toàn bộ workflow trong Shuffle](../screenshots/Workflow-shuffle.jpg)
+![Full Shuffle workflow](../screenshots/Workflow-shuffle.jpg)
 
 ---
 
 **Node 1 — Wazuh_alerts**  
-Điểm đầu vào nhận dữ liệu từ Wazuh. 
+Entry point that receives data from Wazuh.
 
-![Webhook node nhận dữ liệu JSON từ Wazuh](../screenshots/Node_1.jpg)
+![Webhook node receiving JSON from Wazuh](../screenshots/Node_1.jpg)
 
 ---
 
 **Node 2 — Extract Hash**  
-Dùng Shuffle Tools, hành động regex_capture_group để trích xuất SHA256 từ chuỗi Hashes của Sysmon. 
+Uses Shuffle Tools with the regex_capture_group action to pull the SHA256 hash from the Sysmon Hashes string.
 
-Cấu hình:
+Config:
 - Input data: `$exec.all_fields.data.win.eventdata.hashes`
 - Regex: `SHA256=([A-Fa-f0-9]{64})`
 
 
 ---
 
-**Rẽ nhánh dựa trên Extract_Hash**  
+**Branching based on Extract_Hash**  
 
-**Branch → VT_Hash_Lookup (Nhánh A — File Hash):**
+**Branch → VT_Hash_Lookup (Branch A — File Hash):**
 ```
 Condition: $extract_hash IS NOT EMPTY
 ```
 
 
-**Branch → VT_IP_Lookup (Nhánh B — IP Reputation):**
+**Branch → VT_IP_Lookup (Branch B — IP Reputation):**
 ```
 Condition: $extract_hash IS EMPTY
        AND $exec.all_fields.data.win.eventdata.ipAddress IS NOT EMPTY
@@ -145,7 +145,7 @@ Condition: $extract_hash IS EMPTY
 ```
 
 
-**Branch → Behavioral_Skip_VT (Nhánh C — Behavioral):**
+**Branch → Behavioral_Skip_VT (Branch C — Behavioral):**
 ```
 Condition: $extract_hash IS EMPTY
        AND ($exec.all_fields.data.win.eventdata.ipAddress MATCH ^(127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|::1|[fF][eE]80|$|.*ipAddress.*))
@@ -154,7 +154,7 @@ Condition: $extract_hash IS EMPTY
 ---
 
 **Node 3A — VT_Hash_Lookup**  
-Gọi VirusTotal API để kiểm tra danh tiếng của file dựa trên mã SHA256:
+Calls the VirusTotal API to check file reputation based on the SHA256 hash:
 - App: `Virustotal_v3`
 - Action: `Get a hash report`
 - Hash: `$extract_hash`
@@ -162,7 +162,7 @@ Gọi VirusTotal API để kiểm tra danh tiếng của file dựa trên mã SH
 ---
 
 **Node 4A — Format_VT_Score**  
-Dùng `repeat_back_to_me` để format kết quả VT thành chuỗi dễ đọc:
+Uses `repeat_back_to_me` to format the VT result into a readable string:
 ```
 $vt_hash_lookup.#.body.data.attributes.last_analysis_stats.malicious/
 $vt_hash_lookup.#.body.data.attributes.last_analysis_stats.undetected engines detected
@@ -171,7 +171,7 @@ $vt_hash_lookup.#.body.data.attributes.last_analysis_stats.undetected engines de
 ---
 
 **Node 3B — VT_IP_Lookup**  
-Kiểm tra danh tiếng IP nguồn tấn công trên VirusTotal:
+Checks the source IP reputation on VirusTotal:
 - App: `Virustotal_v3`
 - Action: `Get an IP address report`
 - IP: `$exec.all_fields.data.win.eventdata.ipAddress`
@@ -179,19 +179,19 @@ Kiểm tra danh tiếng IP nguồn tấn công trên VirusTotal:
 ---
 
 **Node 4B — Format_IP_Score**  
-Format kết quả IP thành chuỗi:
+Formats the IP result into a string:
 ```
 IP Reputation: $vt_ip_lookup.body.data.attributes.last_analysis_stats.malicious engines flagged
 Country: $vt_ip_lookup.body.data.attributes.country
 ASN: $vt_ip_lookup.body.data.attributes.as_owner
 ```
-Kết quả ví dụ: `"IP Reputation: 3 engines flagged | Country: CN | ASN: China Telecom"`
+Example output: `"IP Reputation: 3 engines flagged | Country: CN | ASN: China Telecom"`
 
 
 ---
 
 **Node 3C — Behavioral_Skip_VT**  
-Gán chuỗi mặc định:
+Sets a default string:
 ```
 N/A — Behavioral detection, no file/IP indicator for VT lookup
 ```
@@ -199,11 +199,11 @@ N/A — Behavioral detection, no file/IP indicator for VT lookup
 ---
 
 **Node 5 — Dynamic_Severity_Scoring**  
-Hợp nhất kết quả từ 3 nhánh (Format_VT_Score / Format_IP_Score / Behavioral_Skip_VT), tính toán Severity và quyết định gửi email.  Dùng [script.py](./script.py) để quyết định logic xử lí:
+Merges results from all 3 branches (Format_VT_Score / Format_IP_Score / Behavioral_Skip_VT), calculates severity and decides whether to send an email. Uses [script.py](./script.py) for the scoring logic:
 
-- Khi VT trả clean (0 engines detect), script hạ severity xuống vì đã có bằng chứng file/IP sạch. Ngược lại, alert behavioral không gọi VT nên không có gì giảm nhẹ → giữ severity theo rule_level.
-- Webhook Wazuh đã lọc `<level>8</level>`, nên mọi alert vào Shuffle đều có `rule_level >= 8`.
-- Phân bậc theo Wazuh rule level: 12+ = HIGH, 10-11 = MEDIUM, 8-9 = LOW.
+- When VT returns clean (0 engines detect), the script lowers severity since there's evidence the file/IP is clean. For behavioral alerts that don't call VT, there's nothing to lower the score — so severity stays based on rule_level.
+- The Wazuh webhook already filters at `<level>8</level>`, so every alert hitting Shuffle has `rule_level >= 8`.
+- Severity tiers based on Wazuh rule level: 12+ = HIGH, 10-11 = MEDIUM, 8-9 = LOW.
 
 
 ![](../screenshots/Node_5.jpg)
@@ -222,11 +222,11 @@ print(epoch_ms)
 ---
 
 **Node 7 — The_Hive (Create Alert/Case)**  
-Kết nối TheHive vào Shuffle:
+Connect TheHive to Shuffle:
 - URL: `http://192.168.56.10:9000`
-- API Key: Tạo trong TheHive
+- API Key: Generated in TheHive
 
-Cấu hình Alert với các trường:
+Alert fields config:
 ```text
 Title:       [Wazuh-$exec.all_fields.rule.id] $exec.all_fields.rule.description
 Severity:    $dynamic_severity_scoring.0.message.severity
@@ -245,7 +245,7 @@ Tags:        ["wazuh", "automated", "phase2", "$dynamic_severity_scoring.0.messa
 ---
 
 **Node 8 — Get_Exec_ID**  
-Lấy Execution ID hiện tại từ Shuffle API để tạo link form phê duyệt cho analyst.Execution ID dùng cho link `frontend_continue` trong email. Node này gọi API nội bộ:
+Gets the current Execution ID from the Shuffle API to build the approval form link for the analyst. This ID is used for the `frontend_continue` link in the email. The node calls the internal API:
 ```python
 import requests, json
 api_key = "<SHUFFLE_API_KEY>"
@@ -260,21 +260,21 @@ print(data[0].get("execution_id", "KEY_NOT_FOUND"))
 
 ---
 
-**Quyết định việc gửi mail**  
-Điều kiện `send_email = true` nối từ `Get_Exec_ID` → `Email_App`:
+**Email send decision**  
+The condition `send_email = true` connects from `Get_Exec_ID` → `Email_App`:
 
 ```
 Condition: $dynamic_severity_scoring.0.message.send_email equals true
-    → TRUE:  Tiếp tục gửi thông báo đến Email_App 
-    → FALSE: Case đã lưu trên TheHive, không cần can thiệp
+    → TRUE:  Continue to Email_App and send notification
+    → FALSE: Case is already saved in TheHive, no action needed
 ```
 
 ---
 
 **Node 9 — Email_App**  
-Do tính năng email tích hợp của User Input bị vô hiệu hóa trên Shuffle self-hosted, ta dùng node `Email App` riêng biệt để gửi thông báo qua SMTP.
+The built-in email feature of User Input is disabled on Shuffle self-hosted, so I used a separate `Email App` node to send notifications via SMTP.
 
-Cấu hình SMTP:
+SMTP config:
 ```
 Action:    Send email smtp
 Username:  <GMAIL_ADDRESS>
@@ -293,18 +293,18 @@ Recipient: <SOC_ANALYST_EMAIL>
 ---
 
 **Node 10 — Email_User_Input**  
-Tạo form phê duyệt chờ analyst phản hồi.Node sẽ vào trạng thái `WAITING` — workflow tạm dừng cho đến khi analyst trả lời qua form. 
+Creates an approval form and waits for the analyst to respond. The node goes into `WAITING` state — the workflow pauses until the analyst submits the form.
 ![](../screenshots/Node_10_1.jpg)
 
-Analyst bấm Continue hoặc Stop, kết quả được truyền xuống Node 11 với condition trên branch kiểm tra user có approved hay không.
+The analyst clicks Continue or Stop. The result gets passed to Node 11 with a branch condition checking if the user approved.
 ![](../screenshots/Node_10_2.jpg)
 
 ---
 
 **Node 11 — Get_Wazuh_Token**  
-Wazuh API yêu cầu xác thực JWT. Cần gọi API authenticate trước để lấy token.
+Wazuh API requires JWT authentication. Need to call the authenticate endpoint first to get a token.
 
-Cấu hình trong Shuffle:
+Config in Shuffle:
 ```
 Method:     POST
 URL:        https://192.168.56.10:55000/security/user/authenticate?raw=true
@@ -322,14 +322,14 @@ Timeout:    10
 
 
 **Node 12 — Wazuh_Active_Response**  
-Chỉ thực thi khi đủ 3 điều kiện trên branch từ Email_User_Input:
+Only runs when all 3 conditions on the branch from Email_User_Input are met:
 ```
 1. email.success equals true                          
 2. $exec.all_fields.data.win.eventdata.ipAddress IS NOT EMPTY   
 3. ipAddress DOES NOT MATCH ^(127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|::1|[fF][eE]80) 
 ```
 
-Cấu hình trong Shuffle:
+Config in Shuffle:
 ```
 Method:      PUT
 URL:         https://192.168.56.10:55000/active-response
@@ -349,9 +349,9 @@ Body:
 
 ---
 
-### Cấu hình Wazuh Active Response trên Ubuntu Server
+### Wazuh Active Response Config on Ubuntu Server
 
-Để Wazuh Manager nhận và chuyển tiếp lệnh Active Response đến agent, cần khai báo trong `/var/ossec/etc/ossec.conf` trên Ubuntu Server:
+To let Wazuh Manager receive and forward Active Response commands to the agent, add this to `/var/ossec/etc/ossec.conf` on the Ubuntu Server:
 
 ```xml
 <command>
@@ -370,25 +370,25 @@ Body:
 
 
 
-Xác nhận block IP hoạt động (test với IP giả `1.2.3.4`):
+Confirmed the IP block works (tested with dummy IP `1.2.3.4`):
 
-![Kiểm tra Windows Firewall block IP](../screenshots/Block_ip.jpg)
+![Windows Firewall blocking IP](../screenshots/Block_ip.jpg)
 
 ---
 
 
 
-##  Giải thích các file cấu hình
+## Config Files
 
-- [shuffle_workflow.json](./shuffle_workflow.json): Toàn bộ Workflow từ Shuffle của luồng SOAR.
+- [shuffle_workflow.json](./shuffle_workflow.json): The full Shuffle workflow export for the SOAR pipeline.
 
 
 
-##  Kết quả đạt được
+## Results
 
-- Triển khai Shuffle self-hosted tích hợp hoàn toàn với Wazuh và TheHive từ Phase 1.
-- Thiết kế kiến trúc với 3 nhánh xử lý: File Hash → VT File API, Source IP → VT IP API, Behavioral → skip VT. Đảm bảo workflow không bị lỗi khi gặp alert thiếu hash hoặc IP.
--  Xây dựng cơ chế Dynamic Severity Scoring — tự động nâng/hạ mức độ nghiêm trọng của Case dựa trên kết quả VirusTotal, giảm 70% thời gian triage thủ công.
--  Cấu hình Email App gửi thông báo cảnh báo + Email User Input tạo form phê duyệt Block IP. Chỉ kích hoạt khi alert thực sự cần hành động (VT positive hoặc rule level ≥ 12), giảm alert fatigue cho analyst.
--  Kích hoạt Wazuh Active Response với xác thực JWT — tự động chặn IP tấn công ở tầng firewall trong vòng 300 giây.
--  Mọi sự cố được tạo thành Case trong TheHive tự động kèm enrichment đầy đủ gồm VT score, IP reputation, hoặc ghi chú behavioral để chuẩn bị nguyên liệu cho điều tra chuyên sâu.
+- Deployed Shuffle self-hosted, fully integrated with Wazuh and TheHive from Phase 1.
+- Designed 3 processing branches: File Hash → VT File API, Source IP → VT IP API, Behavioral → skip VT. The workflow doesn't break when alerts are missing a hash or IP.
+- Built Dynamic Severity Scoring — automatically adjusts case severity based on VirusTotal results, saves a lot of manual triage time.
+- Set up Email App for alert notifications + Email User Input for the IP block approval form. Only triggers when the alert actually needs action (VT positive or rule level ≥ 12), reducing alert fatigue.
+- Wazuh Active Response with JWT authentication — automatically blocks attacker IPs at the firewall level for 300 seconds.
+- Every incident gets created as a case in TheHive automatically, with full enrichment data (VT score, IP reputation, or behavioral note) ready for deeper investigation.

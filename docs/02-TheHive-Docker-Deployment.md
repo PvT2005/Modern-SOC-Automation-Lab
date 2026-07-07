@@ -1,35 +1,35 @@
-# Cài đặt TheHive dùng Docker
+# Deploying TheHive with Docker
 
- Để quản lý dễ dàng và tách biệt môi trường, hệ thống này được triển khai dưới dạng Docker Containers.
+I used Docker to keep things clean and separated. TheHive, Cassandra, and Elasticsearch all run as containers.
 
-## 1. Cài đặt Docker và Docker Compose
+## 1. Install Docker and Docker Compose
 ```bash
 sudo apt install docker.io docker-compose -y
 sudo systemctl enable --now docker
 ```
-## 2. Cấu hình file docker-compose.yml
+## 2. Create the docker-compose.yml
 ```bash
 mkdir thehive && cd thehive
 nano docker-compose.yml
 ```
-Cấu hình file [docker-compose.yml](../Phase-2-Automation/docker-compose.yml)
+See the full config here: [docker-compose.yml](../Phase-2-Automation/docker-compose.yml)
 
-## 3. Khởi chạy hệ thống
+## 3. Start the Stack
 ```bash
 sudo docker-compose up -d
 sudo docker ps
 ```
-## 4. Truy cập hệ thống
-Mở trình duyệt và truy cập: http://192.168.56.10:9000
+## 4. Access TheHive
+Open your browser and go to: http://192.168.56.10:9000
 ![thehive-login](../screenshots/TheHive-login.jpg)
 ![thehive-dashboard](../screenshots/TheHive-Dashboard.jpg)
 
-## 5. Cấu hình hệ thống TheHive, Cassandra và Elasticsearch
+## 5. Configure TheHive, Cassandra and Elasticsearch
 
-Trong môi trường Docker, các cấu hình này được thực hiện thông qua việc mount các file `.yaml`/`.conf` vào bên trong container. 
+In this Docker setup, configs are mounted into the containers using `.yaml`/`.conf` files.
 
-### Cấu hình Cassandra
-Tạo thư mục chứa cấu hình và tạo file [cassandra.yaml](../Phase-2-Automation/cassandra.yaml) để cấu hình Cluster và địa chỉ lắng nghe.
+### Cassandra Config
+Create the config directory and set up [cassandra.yaml](../Phase-2-Automation/cassandra.yaml) for cluster name and listen address.
 
 ```bash
 mkdir -p ./cassandra_config
@@ -37,37 +37,37 @@ nano ./cassandra_config/cassandra.yaml
 ```
 
 
-### Cấu hình Elasticsearch và giới hạn RAM
-- Để TheHive có thể Index một cách ổn định, ta tạo cấu hình cho [elasticsearch.yml](../Phase-2-Automation/elasticsearch.yml) và thiết lập giới hạn RAM để tránh lỗi Crash hệ thống:
+### Elasticsearch Config and RAM Limit
+- For stable indexing in TheHive, create [elasticsearch.yml](../Phase-2-Automation/elasticsearch.yml) and set a RAM limit so it doesn't crash the server:
 ```bash
 mkdir -p ./elasticsearch_config
 mkdir -p ./elasticsearch_data ./cassandra_data
 nano ./elasticsearch_config/elasticsearch.yml
 ```
 
-- Tiếp theo, tạo file cấu hình [jvm.options](../Phase-2-Automation/jvm.options) cho Java Virtual Machine để giới hạn sử dụng 2GB RAM và fix lỗi `log4j2`:
+- Then create [jvm.options](../Phase-2-Automation/jvm.options) to cap the JVM at 2GB RAM and fix the `log4j2` issue:
 ```bash
 nano ./elasticsearch_config/jvm.options
 ```
 
 
-### Cấu hình TheHive
-- TheHive yêu cầu một Secret Key để bảo mật phiên đăng nhập và mã hóa.
-- Chạy lệnh sau trên Terminal để lấy ra một chuỗi ngẫu nhiên và sao chép lại:
+### TheHive Config
+- TheHive needs a secret key for session security and encryption.
+- Run this command to generate a random string, then copy it:
 ```bash
 cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 64 | head -n 1
 ```
 
-- Sau đó tạo thư mục và mở file cấu hình [application.conf](../Phase-2-Automation/application.conf) chính của TheHive:
+- Create the config directory and edit [application.conf](../Phase-2-Automation/application.conf):
 ```bash
 mkdir -p ./thehive_config
 nano ./thehive_config/application.conf
 ```
 
 
-### Cập nhật lại `docker-compose.yml`
+### Restart the Stack
 
-Khởi động lại toàn bộ stack để nạp cấu hình mới:
+Bring everything down and back up to apply the new configs:
 ```bash
 sudo docker-compose down
 sudo docker-compose up -d
